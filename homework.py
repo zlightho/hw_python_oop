@@ -1,19 +1,15 @@
+from dataclasses import dataclass
+from typing import ClassVar
+
+
+@dataclass
 class InfoMessage:
     """Информационное сообщение о тренировке."""
-
-    def __init__(
-        self,
-        training_type: str,
-        duration: float,
-        distance: float,
-        speed: float,
-        calories: float,
-    ) -> None:
-        self.training_type = training_type
-        self.duration = round(duration)
-        self.distance = round(distance, 3)
-        self.speed = round(speed, 3)
-        self.calories = round(calories, 3)
+    training_type: str
+    duration: float
+    distance: float
+    speed: float
+    calories: float
 
     def get_message(self):
         return (
@@ -25,21 +21,15 @@ class InfoMessage:
         )
 
 
+@dataclass
 class Training:
     """Базовый класс тренировки."""
-
-    LEN_STEP = 0.65
-    M_IN_KM = 1000
-
-    def __init__(
-        self,
-        action: int,
-        duration: float,
-        weight: float,
-    ) -> None:
-        self.action = action
-        self.duration = duration
-        self.weight = weight
+    action: int
+    duration: float
+    weight: float
+    LEN_STEP: ClassVar[float] = 0.65
+    M_IN_KM: ClassVar[float] = 1000.00
+    MIN_IN_HOUR: ClassVar[float] = 60.00
 
     def get_distance(self) -> float:
         """Получить дистанцию в км."""
@@ -51,7 +41,9 @@ class Training:
 
     def get_spent_calories(self) -> float:
         """Получить количество затраченных калорий."""
-        pass
+        raise NotImplementedError(
+            "Определите метод get_spent_calories"
+            " в %s." % (self.__class__.__name__))
 
     def show_training_info(self) -> InfoMessage:
         """Вернуть информационное сообщение о выполненной тренировке."""
@@ -64,73 +56,57 @@ class Training:
         )
 
 
+@dataclass
 class Running(Training):
     """Тренировка: бег."""
-
-    def __init__(
-        self,
-        action: int,
-        duration: float,
-        weight: float,
-    ) -> None:
-        super().__init__(action, duration, weight)
+    COEFF_CALORIE_1: ClassVar[float] = 18
+    COEFF_CALORIE_2: ClassVar[float] = 20
 
     def get_spent_calories(self) -> float:
-        coeff_calorie_1 = 18
-        coeff_calorie_2 = 20
         return (
-            (coeff_calorie_1 * self.get_mean_speed() - coeff_calorie_2)
+            (self.COEFF_CALORIE_1
+             * self.get_mean_speed()
+             - self.COEFF_CALORIE_2)
             * self.weight
             / self.M_IN_KM
             * self.duration
-            * 60
+            * self.MIN_IN_HOUR
         )
 
 
+@dataclass
 class SportsWalking(Training):
     """Тренировка: спортивная ходьба."""
-
-    def __init__(
-        self, action: int, duration: float, weight: float, height: float
-    ) -> None:
-        super().__init__(action, duration, weight)
-        self.height = height
+    height: float
+    COEFF_CALORIE_1: ClassVar[float] = 0.035
+    COEFF_CALORIE_2: ClassVar[float] = 0.029
 
     def get_spent_calories(self) -> float:
-        coeff_calorie_1 = 0.035
-        coeff_calorie_2 = 0.029
         return (
             (
-                coeff_calorie_1 * self.weight
+                self.COEFF_CALORIE_1 * self.weight
                 + (
                     self.get_mean_speed()
-                    * self.get_mean_speed()
+                    ** 2
                     // self.height
                 )
-                * coeff_calorie_2
+                * self.COEFF_CALORIE_2
                 * self.weight
             )
             * self.duration
-            * 60
+            * self.MIN_IN_HOUR
         )
 
 
+@dataclass
 class Swimming(Training):
     """Тренировка: плавание."""
-
-    LEN_STEP = 1.38
-
-    def __init__(
-        self,
-        action: int,
-        duration: float,
-        weight: float,
-        length_pool: float,
-        count_pool: float,
-    ) -> None:
-        super().__init__(action, duration, weight)
-        self.length_pool = length_pool
-        self.count_pool = count_pool
+    weight: float
+    length_pool: float
+    count_pool: float
+    COEFF_CALORIE_1: ClassVar[float] = 1.1
+    COEFF_CALORIE_2: ClassVar[float] = 2.0
+    LEN_STEP: ClassVar[float] = 1.38
 
     def get_mean_speed(self) -> float:
         return (
@@ -138,25 +114,20 @@ class Swimming(Training):
         )
 
     def get_spent_calories(self) -> float:
-        coeff_calorie_1 = 1.1
-        coeff_calorie_2 = 2
         return (
-            (self.get_mean_speed() + coeff_calorie_1)
-            * coeff_calorie_2
+            (self.get_mean_speed() + self.COEFF_CALORIE_1)
+            * self.COEFF_CALORIE_2
             * self.weight
         )
 
 
 def read_package(workout_type: str, data: list) -> Training:
     """Прочитать данные полученные от датчиков."""
-    if workout_type == "SWM":
-        return Swimming(*data)
-    elif workout_type == "RUN":
-        return Running(*data)
-    elif workout_type == "WLK":
-        return SportsWalking(*data)
-    else:
-        print(f"{workout_type} не опредлен")
+    dict_workout_type = {"SWM": Swimming, "RUN": Running, "WLK": SportsWalking}
+    kls = dict_workout_type.get(workout_type)
+    if kls is None:
+        kls = Training
+    return kls(*data)
 
 
 def main(training: Training) -> None:
