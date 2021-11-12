@@ -89,15 +89,11 @@ class SportsWalking(Training):
 
     def get_spent_calories(self) -> float:
         return (
-            (
-                self.WLK_COEFF_CALORIE_1 * self.weight
-                + (self.get_mean_speed() ** 2 // self.height)
-                * self.WLK_COEFF_CALORIE_2
-                * self.weight
-            )
-            * self.duration
-            * self.MIN_IN_HOUR
-        )
+            self.WLK_COEFF_CALORIE_1 * self.weight
+            + (self.get_mean_speed() ** 2 // self.height)
+            * self.WLK_COEFF_CALORIE_2
+            * self.weight
+        ) * (self.duration * self.MIN_IN_HOUR)
 
 
 @dataclass
@@ -129,7 +125,6 @@ def read_package(workout_type: str, data: list) -> Training:
     dict_workout_type = {"SWM": Swimming, "RUN": Running, "WLK": SportsWalking}
     kls = dict_workout_type.get(workout_type)
     if kls is None:
-        kls = Training
         raise NameError(
             f"Функция read_package - Тип тренировки {workout_type}:"
             "отсутствует в справочнике dict_workout_type"
