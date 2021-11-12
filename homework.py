@@ -5,6 +5,7 @@ from typing import ClassVar
 @dataclass
 class InfoMessage:
     """Информационное сообщение о тренировке."""
+
     training_type: str
     duration: float
     distance: float
@@ -24,6 +25,7 @@ class InfoMessage:
 @dataclass
 class Training:
     """Базовый класс тренировки."""
+
     action: int
     duration: float
     weight: float
@@ -43,7 +45,8 @@ class Training:
         """Получить количество затраченных калорий."""
         raise NotImplementedError(
             "Определите метод get_spent_calories"
-            " в %s." % (self.__class__.__name__))
+            " в %s." % (self.__class__.__name__)
+        )
 
     def show_training_info(self) -> InfoMessage:
         """Вернуть информационное сообщение о выполненной тренировке."""
@@ -59,14 +62,16 @@ class Training:
 @dataclass
 class Running(Training):
     """Тренировка: бег."""
-    COEFF_CALORIE_1: ClassVar[float] = 18
-    COEFF_CALORIE_2: ClassVar[float] = 20
+
+    RUN_COEFF_CALORIE_1: ClassVar[float] = 18
+    RUN_COEFF_CALORIE_2: ClassVar[float] = 20
 
     def get_spent_calories(self) -> float:
         return (
-            (self.COEFF_CALORIE_1
-             * self.get_mean_speed()
-             - self.COEFF_CALORIE_2)
+            (
+                self.RUN_COEFF_CALORIE_1 * self.get_mean_speed()
+                - self.RUN_COEFF_CALORIE_2
+            )
             * self.weight
             / self.M_IN_KM
             * self.duration
@@ -77,20 +82,17 @@ class Running(Training):
 @dataclass
 class SportsWalking(Training):
     """Тренировка: спортивная ходьба."""
+
     height: float
-    COEFF_CALORIE_1: ClassVar[float] = 0.035
-    COEFF_CALORIE_2: ClassVar[float] = 0.029
+    WLK_COEFF_CALORIE_1: ClassVar[float] = 0.035
+    WLK_COEFF_CALORIE_2: ClassVar[float] = 0.029
 
     def get_spent_calories(self) -> float:
         return (
             (
-                self.COEFF_CALORIE_1 * self.weight
-                + (
-                    self.get_mean_speed()
-                    ** 2
-                    // self.height
-                )
-                * self.COEFF_CALORIE_2
+                self.WLK_COEFF_CALORIE_1 * self.weight
+                + (self.get_mean_speed() ** 2 // self.height)
+                * self.WLK_COEFF_CALORIE_2
                 * self.weight
             )
             * self.duration
@@ -101,11 +103,12 @@ class SportsWalking(Training):
 @dataclass
 class Swimming(Training):
     """Тренировка: плавание."""
+
     weight: float
     length_pool: float
     count_pool: float
-    COEFF_CALORIE_1: ClassVar[float] = 1.1
-    COEFF_CALORIE_2: ClassVar[float] = 2.0
+    SWM_COEFF_CALORIE_1: ClassVar[float] = 1.1
+    SWM_COEFF_CALORIE_2: ClassVar[float] = 2.0
     LEN_STEP: ClassVar[float] = 1.38
 
     def get_mean_speed(self) -> float:
@@ -115,8 +118,8 @@ class Swimming(Training):
 
     def get_spent_calories(self) -> float:
         return (
-            (self.get_mean_speed() + self.COEFF_CALORIE_1)
-            * self.COEFF_CALORIE_2
+            (self.get_mean_speed() + self.SWM_COEFF_CALORIE_1)
+            * self.SWM_COEFF_CALORIE_2
             * self.weight
         )
 
@@ -127,6 +130,10 @@ def read_package(workout_type: str, data: list) -> Training:
     kls = dict_workout_type.get(workout_type)
     if kls is None:
         kls = Training
+        raise NameError(
+            f"Функция read_package - Тип тренировки {workout_type}:"
+            "отсутствует в справочнике dict_workout_type"
+        )
     return kls(*data)
 
 
